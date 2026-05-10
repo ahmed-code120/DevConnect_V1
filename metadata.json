@@ -1,0 +1,9 @@
+{
+  "name": "DevConnect",
+  "description": "Plateforme sociale dédiée aux étudiants développeurs",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": []
+}

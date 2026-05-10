@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --color-neon-red: #FF003C;
+  --color-neon-red-dim: rgba(255, 0, 60, 0.2);
+  --color-neon-red-glow: #FF003C;
+  --color-bg-dark: #09090b;
+  --color-bg-card: #141416;
+  --color-bg-input: #050505;
+  --color-text-dim: #71717a;
+  
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #09090b;
+    --card: #ffffff;
+    --card-foreground: #09090b;
+    --border: #e4e4e7;
+    --primary: #ff2a4b;
+    --primary-foreground: #fcfcfc;
+  }
+
+  .dark {
+    --background: #050505; /* Deepest black for the background */
+    --foreground: #fafafa;
+    --card: #111111; /* Slightly lighter for cards */
+    --card-foreground: #fafafa;
+    --border: #27272a;
+    --primary: #ff2a4b;
+    --primary-foreground: #fcfcfc;
+  }
+}
+
+@layer utilities {
+  .text-neon-red {
+    color: #fff;
+    text-shadow: 
+      0 0 5px #fff,
+      0 0 10px #fff,
+      0 0 20px var(--color-neon-red-glow),
+      0 0 40px var(--color-neon-red-glow),
+      0 0 80px var(--color-neon-red-glow);
+  }
+  
+  .shadow-neon-red {
+    box-shadow: 0 0 20px var(--color-neon-red-glow);
+  }
+  
+  .shadow-neon-red-soft {
+    box-shadow: 0 0 10px var(--color-neon-red-dim);
+  }
+
+  .grid-pattern {
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  @apply font-sans antialiased overflow-x-hidden;
+}
