@@ -4,6 +4,7 @@
  */
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import LoadingScreen from './pages/LoadingScreen';
 import LoginScreen from './pages/LoginScreen';
 import RegisterScreen from './pages/RegisterScreen';
@@ -49,6 +50,7 @@ export default function App() {
            <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <SettingsModal />
+        <Analytics />
       </BrowserRouter>
     </SettingsProvider>
   );
