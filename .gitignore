@@ -10,3 +10,4 @@ coverage/
 .vscode/
 .gemini/
 scratch/
+backend-php/uploads/
