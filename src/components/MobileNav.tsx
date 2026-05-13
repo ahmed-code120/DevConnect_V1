@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, MessageSquare, User, Bookmark, Compass } from 'lucide-react';
+import { Home, Search, MessageSquare, User, Bookmark, Compass, Heart } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 
 export default function MobileNav() {
@@ -9,7 +9,7 @@ export default function MobileNav() {
 
   const navItems = [
     { icon: Home, label: 'Feed', to: '/feed' },
-    { icon: Compass, label: 'Watch', to: '/videos' },
+    { icon: Heart, label: 'Activity', to: '/activity' },
     { icon: MessageSquare, label: 'Messages', to: '/messages' },
     { icon: User, label: 'Profile', to: '/profile' },
   ];

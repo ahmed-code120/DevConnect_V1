@@ -6,16 +6,59 @@ import { useSettings } from '../context/SettingsContext';
 
 export default function RegisterScreen() {
   const navigate = useNavigate();
-  const { theme } = useSettings();
+  const { theme, setCurrentUser } = useSettings();
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate auth delay
-    setTimeout(() => {
-      navigate('/feed');
-    }, 1500);
+
+    const formData = new FormData(e.target as HTMLFormElement);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Combine names for PHP backend if needed, or send as is
+    const full_name = `${data.first_name} ${data.last_name}`;
+
+    try {
+      console.log('Attempting registration with data:', { full_name, email: data.email, handle: data.handle });
+      
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+      const response = await fetch('/api/php/register.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          full_name, 
+          email: data.email, 
+          handle: data.handle,
+          password: data.password 
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(id);
+
+      console.log('Response status:', response.status);
+      const result = await response.json();
+      console.log('Registration result:', result);
+
+      if (result.status === 'success') {
+        setCurrentUser(result.data.user);
+        navigate('/feed');
+      } else {
+        alert(result.message);
+      }
+    } catch (error: any) {
+      console.error('Registration error details:', error);
+      if (error.name === 'AbortError') {
+        alert('Request timed out. Please check if your local PHP server (XAMPP) is running and the URL in vite.config.ts is correct.');
+      } else {
+        alert('Failed to connect to backend: ' + error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -72,6 +115,7 @@ export default function RegisterScreen() {
                   </div>
                   <input 
                     type="text" 
+                    name="first_name"
                     placeholder="John"
                     className={`w-full py-3.5 pl-11 pr-4 rounded-xl border focus:outline-none transition-all ${
                       theme === 'dark' 
@@ -86,6 +130,7 @@ export default function RegisterScreen() {
                 <label className={`text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Last Name</label>
                 <input 
                   type="text" 
+                  name="last_name"
                   placeholder="Doe"
                   className={`w-full py-3.5 px-4 rounded-xl border focus:outline-none transition-all ${
                     theme === 'dark' 
@@ -98,6 +143,21 @@ export default function RegisterScreen() {
             </div>
 
             <div className="space-y-1.5">
+              <label className={`text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Handle</label>
+              <input 
+                type="text" 
+                name="handle"
+                placeholder="@johndoe"
+                className={`w-full py-3.5 px-4 rounded-xl border focus:outline-none transition-all ${
+                  theme === 'dark' 
+                    ? 'bg-[#141414] border-[#222] text-white placeholder:text-gray-600 focus:border-[#FF003C]' 
+                    : 'bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-[#ff2a4b] focus:bg-white focus:ring-4 focus:ring-[#ff2a4b]/10'
+                }`}
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
               <label className={`text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Email</label>
               <div className="relative">
                 <div className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
@@ -105,6 +165,7 @@ export default function RegisterScreen() {
                 </div>
                 <input 
                   type="email" 
+                  name="email"
                   placeholder="dev@example.com"
                   className={`w-full py-3.5 pl-11 pr-4 rounded-xl border focus:outline-none transition-all ${
                     theme === 'dark' 
@@ -124,6 +185,7 @@ export default function RegisterScreen() {
                 </div>
                 <input 
                   type="password" 
+                  name="password"
                   placeholder="••••••••"
                   className={`w-full py-3.5 pl-11 pr-4 rounded-xl border focus:outline-none transition-all ${
                     theme === 'dark' 

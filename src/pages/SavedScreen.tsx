@@ -11,32 +11,41 @@ export default function SavedScreen() {
   const { theme, openSettings } = useSettings();
   const [activeTab, setActiveTab] = useState('All');
   
-  const savedPostIds = (() => {
-    try {
-      return JSON.parse(localStorage.getItem('savedPosts') || '[]');
-    } catch {
-      return [];
-    }
-  })();
+  const [savedItems, setSavedItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const savedItems = DEFAULT_POSTS.filter((post: any) => savedPostIds.includes(post.id)).map(post => {
-    // Map to the shape used in SavedScreen
-    return {
-      id: post.id,
-      type: post.videoUrl ? 'video' : (post.images && post.images.length > 0 ? 'photo' : 'post'),
-      title: post.desc.substring(0, 50) + (post.desc.length > 50 ? '...' : ''),
-      author: post.name,
-      date: post.time,
-      excerpt: post.desc,
-      likes: post.likes,
-      comments: post.comments,
-      url: post.images ? post.images[0] : undefined,
-      caption: post.desc,
-      category: post.tags && post.tags.length > 0 ? post.tags[0] : 'General',
-      thumbnail: post.videoUrl ? 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=1200&auto=format&fit=crop' : undefined,
-      views: post.shares * 100 + ' views'
-    };
-  });
+  useEffect(() => {
+    fetchSavedPosts();
+  }, []);
+
+  const fetchSavedPosts = async () => {
+    try {
+      const res = await fetch("/api/php/saved_posts.php");
+      const result = await res.json();
+      if (result.status === 'success') {
+        const mapped = result.data.map((post: any) => ({
+          id: post.id,
+          type: post.video_url ? 'video' : (post.images && post.images.length > 0 ? 'photo' : 'post'),
+          title: post.desc.substring(0, 50) + (post.desc.length > 50 ? '...' : ''),
+          author: post.name,
+          date: post.time || post.created_at,
+          excerpt: post.desc,
+          likes: post.likes_count,
+          comments: post.comments_count,
+          url: post.images ? post.images[0] : undefined,
+          caption: post.desc,
+          category: post.tags && post.tags.length > 0 ? post.tags[0] : 'General',
+          thumbnail: post.video_url ? 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=1200&auto=format&fit=crop' : undefined,
+          views: post.shares_count * 100 + ' views'
+        }));
+        setSavedItems(mapped);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredItems = activeTab === 'All' ? savedItems : savedItems.filter(item => {
       if (activeTab === 'Posts') return item.type === 'post';

@@ -7,7 +7,13 @@ export interface User {
   handle: string;
   name: string;
   avatar: string;
+  cover_image: string;
   bio: string;
+  location: string;
+  website_url: string;
+  github_url: string;
+  twitter_url: string;
+  linkedin_url: string;
   followers: number;
   following: number;
   posts: number;
@@ -49,6 +55,7 @@ interface SettingsContextType {
   updateMedia: (key: keyof MediaSettings, val: boolean) => void;
   currentUser: User | null;
   setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
+  isAuthLoading: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -58,6 +65,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [globalMute, setGlobalMute] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   const [notifications, setNotifications] = useState<NotificationOptions>({
     messages: true,
@@ -94,13 +102,24 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    fetch('/api/users/me')
+    fetch('/api/php/me.php', { credentials: 'include' })
       .then(res => res.json())
-      .then(data => setCurrentUser(data))
-      .catch(e => console.error(e));
+      .then(result => {
+        if (result.status === 'success') {
+            setCurrentUser(result.data);
+        } else {
+            setCurrentUser(null);
+        }
+      })
+      .catch(e => {
+        console.error('Session check failed:', e);
+        setCurrentUser(null);
+      })
+      .finally(() => {
+        setIsAuthLoading(false);
+      });
   }, []);
 
-  // Add a class to body for global theme styling if needed or handle it in your components
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -125,7 +144,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       media,
       updateMedia,
       currentUser,
-      setCurrentUser
+      setCurrentUser,
+      isAuthLoading
     }}>
       {children}
     </SettingsContext.Provider>

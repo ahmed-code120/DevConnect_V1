@@ -1,78 +1,73 @@
 <?php
-// register.php
+// backend-php/register.php
+require_once 'config.php';
 
-session_start();
-
-// Database configuration
-$db_host = 'localhost';
-$db_name = 'devconnect_db';
-$db_user = 'root';
-$db_pass = '';
-
-header('Content-Type: application/json');
-
-// Establish database connection
-try {
-    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch(PDOException $e) {
-    echo json_encode(["status" => "error", "message" => "Database connection failed"]);
-    exit;
-}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get and sanitize POST data
-    $full_name = filter_input(INPUT_POST, 'full_name', FILTER_SANITIZE_STRING);
-    $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
-    $password = $_POST['password'] ?? '';
+    // Get and sanitize data
+    $json = file_get_contents('php://input');
+    $data = json_decode($json, true);
+
+    $full_name = htmlspecialchars($data['full_name'] ?? '', ENT_QUOTES, 'UTF-8');
+    $email = filter_var($data['email'] ?? '', FILTER_SANITIZE_EMAIL);
+    $handle = htmlspecialchars($data['handle'] ?? '', ENT_QUOTES, 'UTF-8');
+    $password = $data['password'] ?? '';
 
     // Basic validation
-    if (empty($full_name) || empty($email) || empty($password)) {
-        echo json_encode(["status" => "error", "message" => "Please fill in all fields"]);
-        exit;
+    if (empty($full_name) || empty($email) || empty($password) || empty($handle)) {
+        sendResponse("error", "Please fill in all fields");
     }
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        echo json_encode(["status" => "error", "message" => "Invalid email format"]);
-        exit;
+        sendResponse("error", "Invalid email format");
     }
 
     try {
-        // Check if email already exists
-        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = :email");
-        $stmt->bindParam(':email', $email);
-        $stmt->execute();
+        // Check if email or handle already exists
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = :email OR handle = :handle");
+        $stmt->execute([':email' => $email, ':handle' => $handle]);
         
-        if ($stmt->rowCount() > 0) {
-            echo json_encode(["status" => "error", "message" => "Email already registered"]);
-            exit;
+        if ($stmt->fetch()) {
+            sendResponse("error", "Email or handle already registered");
         }
 
-        // Hash the password using PHP's password_hash
+        // Hash the password
         $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-        // Insert new user
-        $stmt = $pdo->prepare("INSERT INTO users (full_name, email, password_hash, created_at) VALUES (:name, :email, :hash, NOW())");
-        $stmt->bindParam(':name', $full_name);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':hash', $password_hash);
+        // Insert new user without avatar and cover_image (they should be empty initially)
+        $stmt = $pdo->prepare("INSERT INTO users (full_name, email, handle, password_hash, avatar, cover_image) VALUES (:name, :email, :handle, :hash, NULL, NULL)");
         
-        if ($stmt->execute()) {
+        if ($stmt->execute([':name' => $full_name, ':email' => $email, ':handle' => $handle, ':hash' => $password_hash])) {
+            $user_id = $pdo->lastInsertId();
             
-            // Log the user in immediately after registration
-            $_SESSION['user_id'] = $pdo->lastInsertId();
+            // Log the user in
+            $_SESSION['user_id'] = $user_id;
             $_SESSION['user_name'] = $full_name;
-            $_SESSION['user_email'] = $email;
+            $_SESSION['user_handle'] = $handle;
             $_SESSION['logged_in'] = true;
             
-            echo json_encode(["status" => "success", "message" => "Registration successful", "redirect" => "/feed"]);
+            sendResponse("success", "Registration successful", [
+                "user" => [
+                    "id" => (string)$user_id,
+                    "handle" => $handle,
+                    "name" => $full_name,
+                    "email" => $email,
+                    "avatar" => null,
+                    "cover_image" => null,
+                    "bio" => "",
+                    "followers" => 0,
+                    "following" => 0,
+                    "posts" => 0
+                ],
+                "redirect" => "/feed"
+            ]);
         } else {
-            echo json_encode(["status" => "error", "message" => "Registration failed"]);
+            sendResponse("error", "Registration failed");
         }
     } catch(PDOException $e) {
-        echo json_encode(["status" => "error", "message" => "Database error"]);
+        sendResponse("error", "Database error: " . $e->getMessage());
     }
 } else {
-    echo json_encode(["status" => "error", "message" => "Invalid request method"]);
+    sendResponse("error", "Invalid request method");
 }
 ?>

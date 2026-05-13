@@ -32,7 +32,18 @@ export default function LoadingScreen() {
 
       if (newProgress >= 100) {
         clearInterval(interval);
-        setTimeout(() => navigate('/login'), 500);
+        
+        // Final navigation check
+        fetch('/api/php/me.php', { credentials: 'include' })
+          .then(res => res.json())
+          .then(result => {
+            if (result.status === 'success') {
+              navigate('/feed');
+            } else {
+              navigate('/login');
+            }
+          })
+          .catch(() => navigate('/login'));
       }
     }, intervalTime);
 

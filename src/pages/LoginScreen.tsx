@@ -6,16 +6,38 @@ import { useSettings } from '../context/SettingsContext';
 
 export default function LoginScreen() {
   const navigate = useNavigate();
-  const { theme } = useSettings();
+  const { theme, setCurrentUser } = useSettings();
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate auth delay
-    setTimeout(() => {
-      navigate('/feed');
-    }, 1500);
+
+    const email = (e.target as any).email.value;
+    const password = (e.target as any).password.value;
+
+    try {
+      const response = await fetch('/api/php/login.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password })
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        setCurrentUser(result.data.user);
+        navigate('/feed');
+      } else {
+        alert(result.message);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Failed to connect to backend.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -71,6 +93,7 @@ export default function LoginScreen() {
                 </div>
                 <input 
                   type="email" 
+                  name="email"
                   placeholder="dev@example.com"
                   className={`w-full py-3.5 pl-11 pr-4 rounded-xl border focus:outline-none transition-all ${
                     theme === 'dark' 
@@ -95,6 +118,7 @@ export default function LoginScreen() {
                 </div>
                 <input 
                   type="password" 
+                  name="password"
                   placeholder="••••••••"
                   className={`w-full py-3.5 pl-11 pr-4 rounded-xl border focus:outline-none transition-all ${
                     theme === 'dark' 
